@@ -95,7 +95,7 @@
   <select id="day">
     <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
   </select>
-  <input id="start" type="number" placeholder="Start Hour (24h)" min="8" max="20">
+  <input id="start" type="number" placeholder="Start Hour (24h)" min="8" max="22">
   <input id="duration" type="number" placeholder="Duration (hrs)" step="0.5" min="0.5">
   <button onclick="addEvent()">Add Course</button>
 </div>
@@ -113,11 +113,18 @@
 <script>
   const calendar = document.getElementById("calendar");
 
-  // Generate time rows dynamically
-  for (let i = 0; i < 14; i++) {
+  // Convert to 12-hour format
+  function formatTime(hour) {
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const hour12 = ((hour + 11) % 12 + 1); // converts 0->12, 13->1, etc.
+    return `${hour12}:00 ${suffix}`;
+  }
+
+  // Generate time rows from 8 AM to 10 PM
+  for (let i = 0; i <= 14; i++) {
     const time = document.createElement("div");
     time.className = "time-col";
-    time.innerText = `${8 + i}:00`;
+    time.innerText = formatTime(8 + i);
     calendar.appendChild(time);
     for (let j = 0; j < 7; j++) {
       const cell = document.createElement("div");
@@ -151,7 +158,7 @@
     }
 
     const dayIndex = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(day);
-    const top = (start - 8) * 60 + 40; // 60px per hour + header
+    const top = (start - 8) * 60 + 40;
     const height = duration * 60;
 
     const div = document.createElement("div");
