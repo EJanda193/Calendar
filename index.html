@@ -1,91 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <title>Course Calendar</title>
   <style>
     body {
-      font-family: sans-serif;
+      margin: 0;
+      background-color: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
     }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .form-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-container input, .form-container select {
+      margin: 5px;
+      padding: 6px;
+      border-radius: 5px;
+      border: none;
+    }
+
     .calendar {
       display: grid;
       grid-template-columns: 80px repeat(7, 1fr);
-      grid-auto-rows: 40px;
-      border: 1px solid #ccc;
+      grid-template-rows: 40px repeat(14, 60px);
       width: 100%;
-      height: auto;
+      border-top: 1px solid #333;
+      border-left: 1px solid #333;
     }
 
-    .time-slot {
-      border: 1px solid #eee;
-      text-align: right;
-      padding-right: 5px;
+    .calendar > div {
+      border-right: 1px solid #333;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .time-col {
+      background-color: #1e1e1e;
       font-size: 12px;
     }
 
-    .day-header {
-      text-align: center;
+    .header {
+      background-color: #222;
       font-weight: bold;
-      border: 1px solid #ccc;
-      background-color: #f0f0f0;
     }
 
     .event {
       position: absolute;
-      padding: 5px;
-      color: black;
       border-radius: 5px;
+      color: #000;
+      padding: 3px;
       font-size: 12px;
-      overflow: hidden;
+      box-sizing: border-box;
     }
-
-    .teal { background-color: #c1f0f6; border: 1px solid #00b3b3; }
-    .purple { background-color: #e0ccff; border: 1px solid #9933ff; }
-    .green { background-color: #ccffcc; border: 1px solid #33cc33; }
 
     .calendar-container {
       position: relative;
-      height: 1600px;
-    }
-
-    .event-block {
-      position: absolute;
-      width: calc(100% / 7);
-      left: calc(var(--day) * (100% / 7));
-      top: calc(var(--start) * 40px);
-      height: calc((var(--duration)) * 40px);
     }
   </style>
 </head>
 <body>
 
-<h2>Weekly Calendar</h2>
+<h1>Weekly Calendar</h1>
+
+<div class="form-container">
+  <input id="code" type="text" placeholder="Course Code (e.g. CIS*2030)">
+  <input id="type" type="text" placeholder="LEC / LAB">
+  <select id="day">
+    <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option>
+  </select>
+  <input id="start" type="number" placeholder="Start Hour (24h)" min="8" max="20">
+  <input id="duration" type="number" placeholder="Duration (hrs)" step="0.5" min="0.5">
+  <button onclick="addEvent()">Add Course</button>
+</div>
+
 <div class="calendar">
   <div></div>
-  <div class="day-header">Mon</div>
-  <div class="day-header">Tue</div>
-  <div class="day-header">Wed</div>
-  <div class="day-header">Thu</div>
-  <div class="day-header">Fri</div>
-  <div class="day-header">Sat</div>
-  <div class="day-header">Sun</div>
+  <div class="header">Mon</div><div class="header">Tue</div><div class="header">Wed</div>
+  <div class="header">Thu</div><div class="header">Fri</div><div class="header">Sat</div><div class="header">Sun</div>
 
-  <!-- Time slots -->
-  <!-- Repeat 8am - 9pm -->
+  <!-- Times -->
   ${Array.from({length: 14}, (_, i) => `
-    <div class="time-slot">${8 + i}am</div>
+    <div class="time-col">${8 + i}:00</div>
     <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
   `).join('')}
 </div>
 
-<div class="calendar-container">
-  <!-- Example: CIS*2030 Lecture on Monday 11am–12pm (start 3, duration 1) -->
-  <div class="event event-block teal" style="--day:0; --start:3; --duration:1;">CIS*2030 LEC</div>
+<div class="calendar-container" id="calendar-container" style="position: absolute; top: 180px; width: 100%;"></div>
 
-  <!-- Example: CIS*2430 Lab on Thursday 9am–12pm (start 1, duration 3) -->
-  <div class="event event-block green" style="--day:3; --start:1; --duration:3;">CIS*2430 LAB</div>
+<script>
+  const colorMap = {};
+  const colorList = ["#a2d2ff", "#ffc6ff", "#caffbf", "#fdffb6", "#bdb2ff", "#ffadad", "#9bf6ff"];
+  let colorIndex = 0;
 
-  <!-- Example: CIS*2520 Lecture on Monday 5pm–6pm (start 9, duration 1) -->
-  <div class="event event-block purple" style="--day:0; --start:9; --duration:1;">CIS*2520 LEC</div>
-</div>
+  function getColor(code) {
+    if (!colorMap[code]) {
+      colorMap[code] = colorList[colorIndex % colorList.length];
+      colorIndex++;
+    }
+    return colorMap[code];
+  }
+
+  function addEvent() {
+    const code = document.getElementById("code").value.trim();
+    const type = document.getElementById("type").value.trim();
+    const day = document.getElementById("day").value;
+    const start = parseFloat(document.getElementById("start").value);
+    const duration = parseFloat(document.getElementById("duration").value);
+
+    const dayIndex = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(day);
+    const top = (start - 8) * 60 + 40; // 60px per hour + header
+    const height = duration * 60;
+
+    const div = document.createElement("div");
+    div.className = "event";
+    div.style.left = `calc(${(dayIndex + 1) * 100 / 8}%)`;
+    div.style.top = `${top}px`;
+    div.style.height = `${height}px`;
+    div.style.width = "calc(100% / 8)";
+    div.style.backgroundColor = getColor(code);
+    div.innerText = `${code} ${type}`;
+
+    document.getElementById("calendar-container").appendChild(div);
+  }
+</script>
 
 </body>
 </html>
