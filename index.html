@@ -1,1 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: 80px repeat(7, 1fr);
+      grid-auto-rows: 40px;
+      border: 1px solid #ccc;
+      width: 100%;
+      height: auto;
+    }
 
+    .time-slot {
+      border: 1px solid #eee;
+      text-align: right;
+      padding-right: 5px;
+      font-size: 12px;
+    }
+
+    .day-header {
+      text-align: center;
+      font-weight: bold;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+    }
+
+    .event {
+      position: absolute;
+      padding: 5px;
+      color: black;
+      border-radius: 5px;
+      font-size: 12px;
+      overflow: hidden;
+    }
+
+    .teal { background-color: #c1f0f6; border: 1px solid #00b3b3; }
+    .purple { background-color: #e0ccff; border: 1px solid #9933ff; }
+    .green { background-color: #ccffcc; border: 1px solid #33cc33; }
+
+    .calendar-container {
+      position: relative;
+      height: 1600px;
+    }
+
+    .event-block {
+      position: absolute;
+      width: calc(100% / 7);
+      left: calc(var(--day) * (100% / 7));
+      top: calc(var(--start) * 40px);
+      height: calc((var(--duration)) * 40px);
+    }
+  </style>
+</head>
+<body>
+
+<h2>Weekly Calendar</h2>
+<div class="calendar">
+  <div></div>
+  <div class="day-header">Mon</div>
+  <div class="day-header">Tue</div>
+  <div class="day-header">Wed</div>
+  <div class="day-header">Thu</div>
+  <div class="day-header">Fri</div>
+  <div class="day-header">Sat</div>
+  <div class="day-header">Sun</div>
+
+  <!-- Time slots -->
+  <!-- Repeat 8am - 9pm -->
+  ${Array.from({length: 14}, (_, i) => `
+    <div class="time-slot">${8 + i}am</div>
+    <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+  `).join('')}
+</div>
+
+<div class="calendar-container">
+  <!-- Example: CIS*2030 Lecture on Monday 11am–12pm (start 3, duration 1) -->
+  <div class="event event-block teal" style="--day:0; --start:3; --duration:1;">CIS*2030 LEC</div>
+
+  <!-- Example: CIS*2430 Lab on Thursday 9am–12pm (start 1, duration 3) -->
+  <div class="event event-block green" style="--day:3; --start:1; --duration:3;">CIS*2430 LAB</div>
+
+  <!-- Example: CIS*2520 Lecture on Monday 5pm–6pm (start 9, duration 1) -->
+  <div class="event event-block purple" style="--day:0; --start:9; --duration:1;">CIS*2520 LEC</div>
+</div>
+
+</body>
+</html>
