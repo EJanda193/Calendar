@@ -4,21 +4,23 @@
   <meta charset="UTF-8" />
   <title>Course Calendar</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      height: 100%;
       background-color: #121212;
       color: #fff;
       font-family: Arial, sans-serif;
+      overflow: hidden;
     }
 
     h1 {
       text-align: center;
-      margin: 20px 0;
+      margin: 20px 0 10px 0;
     }
 
     .form-container {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     .form-container input, .form-container select {
@@ -28,11 +30,21 @@
       border: none;
     }
 
+    .calendar-wrapper {
+      position: absolute;
+      top: 120px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      overflow: auto;
+    }
+
     .calendar {
       display: grid;
       grid-template-columns: 80px repeat(7, 1fr);
       grid-template-rows: 40px;
       width: 100%;
+      min-height: 100%;
       border-top: 1px solid #333;
       border-left: 1px solid #333;
     }
@@ -66,7 +78,9 @@
     }
 
     .calendar-container {
-      position: relative;
+      position: absolute;
+      top: 160px;
+      width: 100%;
     }
   </style>
 </head>
@@ -79,20 +93,22 @@
   <input id="type" type="text" placeholder="LEC / LAB">
   <input id="location" type="text" placeholder="Location (e.g. MACK 117)">
   <select id="day">
-    <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option>
+    <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
   </select>
   <input id="start" type="number" placeholder="Start Hour (24h)" min="8" max="20">
   <input id="duration" type="number" placeholder="Duration (hrs)" step="0.5" min="0.5">
   <button onclick="addEvent()">Add Course</button>
 </div>
 
-<div class="calendar" id="calendar">
-  <div></div>
-  <div class="header">Mon</div><div class="header">Tue</div><div class="header">Wed</div>
-  <div class="header">Thu</div><div class="header">Fri</div><div class="header">Sat</div><div class="header">Sun</div>
+<div class="calendar-wrapper">
+  <div class="calendar" id="calendar">
+    <div></div>
+    <div class="header">Mon</div><div class="header">Tue</div><div class="header">Wed</div>
+    <div class="header">Thu</div><div class="header">Fri</div><div class="header">Sat</div><div class="header">Sun</div>
+  </div>
 </div>
 
-<div class="calendar-container" id="calendar-container" style="position: absolute; top: 180px; width: 100%;"></div>
+<div class="calendar-container" id="calendar-container"></div>
 
 <script>
   const calendar = document.getElementById("calendar");
