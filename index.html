@@ -31,7 +31,7 @@
     .calendar {
       display: grid;
       grid-template-columns: 80px repeat(7, 1fr);
-      grid-template-rows: 40px repeat(14, 60px);
+      grid-template-rows: 40px;
       width: 100%;
       border-top: 1px solid #333;
       border-left: 1px solid #333;
@@ -59,9 +59,10 @@
       position: absolute;
       border-radius: 5px;
       color: #000;
-      padding: 3px;
+      padding: 4px;
       font-size: 12px;
       box-sizing: border-box;
+      white-space: pre-line;
     }
 
     .calendar-container {
@@ -76,6 +77,7 @@
 <div class="form-container">
   <input id="code" type="text" placeholder="Course Code (e.g. CIS*2030)">
   <input id="type" type="text" placeholder="LEC / LAB">
+  <input id="location" type="text" placeholder="Location (e.g. MACK 117)">
   <select id="day">
     <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option>
   </select>
@@ -84,21 +86,29 @@
   <button onclick="addEvent()">Add Course</button>
 </div>
 
-<div class="calendar">
+<div class="calendar" id="calendar">
   <div></div>
   <div class="header">Mon</div><div class="header">Tue</div><div class="header">Wed</div>
   <div class="header">Thu</div><div class="header">Fri</div><div class="header">Sat</div><div class="header">Sun</div>
-
-  <!-- Times -->
-  ${Array.from({length: 14}, (_, i) => `
-    <div class="time-col">${8 + i}:00</div>
-    <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
-  `).join('')}
 </div>
 
 <div class="calendar-container" id="calendar-container" style="position: absolute; top: 180px; width: 100%;"></div>
 
 <script>
+  const calendar = document.getElementById("calendar");
+
+  // Generate time rows dynamically
+  for (let i = 0; i < 14; i++) {
+    const time = document.createElement("div");
+    time.className = "time-col";
+    time.innerText = `${8 + i}:00`;
+    calendar.appendChild(time);
+    for (let j = 0; j < 7; j++) {
+      const cell = document.createElement("div");
+      calendar.appendChild(cell);
+    }
+  }
+
   const colorMap = {};
   const colorList = ["#a2d2ff", "#ffc6ff", "#caffbf", "#fdffb6", "#bdb2ff", "#ffadad", "#9bf6ff"];
   let colorIndex = 0;
@@ -114,9 +124,15 @@
   function addEvent() {
     const code = document.getElementById("code").value.trim();
     const type = document.getElementById("type").value.trim();
+    const location = document.getElementById("location").value.trim();
     const day = document.getElementById("day").value;
     const start = parseFloat(document.getElementById("start").value);
     const duration = parseFloat(document.getElementById("duration").value);
+
+    if (!code || !type || !location || isNaN(start) || isNaN(duration)) {
+      alert("Please fill out all fields correctly.");
+      return;
+    }
 
     const dayIndex = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(day);
     const top = (start - 8) * 60 + 40; // 60px per hour + header
@@ -129,7 +145,7 @@
     div.style.height = `${height}px`;
     div.style.width = "calc(100% / 8)";
     div.style.backgroundColor = getColor(code);
-    div.innerText = `${code} ${type}`;
+    div.innerText = `${code} ${type}\n${location}`;
 
     document.getElementById("calendar-container").appendChild(div);
   }
