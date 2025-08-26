@@ -28,6 +28,7 @@
     .controls button{cursor:pointer}
     #add{background:#2e7d32;color:#fff}
     #save{background:#1976d2;color:#fff}
+    #clear{background:#8e24aa;color:#fff}
 
     /* Wrapper fills all remaining viewport height */
     .calendar-wrap{
@@ -84,6 +85,7 @@
     <select id="end-meridian"><option>AM</option><option selected>PM</option></select>
     <button id="add">Add Course</button>
     <button id="save">Save PNG</button>
+    <button id="clear">Clear All</button>
   </div>
 
   <div class="calendar-wrap" id="wrap">
@@ -114,13 +116,13 @@
       for (let d=0; d<7; d++) grid.appendChild(document.createElement('div'));
     }
 
-    // ----- Stable color per course code -----
-    const colorMap = {};
-    const palette = ['#a2d2ff','#caffbf','#ffc6ff','#ffd6a5','#bdb2ff','#9bf6ff','#ffadad','#e0ffcd','#ffe5ec'];
+    // ----- Stable color per course code (PERSISTED) -----
+    let colorMap = {};
     let colorIdx = 0;
+    const palette = ['#a2d2ff','#caffbf','#ffc6ff','#ffd6a5','#bdb2ff','#9bf6ff','#ffadad','#e0ffcd','#ffe5ec'];
     function colorFor(code){
       const key = code.trim().toUpperCase();
-      if(!colorMap[key]) colorMap[key] = palette[colorIdx++ % palette.length];
+      if(!colorMap[key]){ colorMap[key] = palette[colorIdx++ % palette.length]; saveState(); }
       return colorMap[key];
     }
 
@@ -138,14 +140,33 @@
     const overlay = document.getElementById('overlay');
     const wrap = document.getElementById('wrap');
 
-    // data model
+    // -------- state + persistence ----------
     let events = [];
+    const LS_KEY_EVENTS = 'calendar.events.v1';
+    const LS_KEY_COLORS = 'calendar.colors.v1';
+    const LS_KEY_COLORIDX = 'calendar.colorIdx.v1';
+
+    function saveState(){
+      localStorage.setItem(LS_KEY_EVENTS, JSON.stringify(events));
+      localStorage.setItem(LS_KEY_COLORS, JSON.stringify(colorMap));
+      localStorage.setItem(LS_KEY_COLORIDX, String(colorIdx));
+    }
+    function loadState(){
+      try {
+        const e = JSON.parse(localStorage.getItem(LS_KEY_EVENTS) || '[]');
+        const c = JSON.parse(localStorage.getItem(LS_KEY_COLORS) || '{}');
+        const i = parseInt(localStorage.getItem(LS_KEY_COLORIDX) || '0', 10);
+        if (Array.isArray(e)) events = e;
+        if (c && typeof c === 'object') colorMap = c;
+        if (!Number.isNaN(i)) colorIdx = i;
+      } catch(_) {}
+    }
 
     // Layout & render (handles overlaps + full-height scaling)
     function renderEvents(){
       overlay.innerHTML = '';
 
-      // sizing from CSS custom props
+      // sizing from live measurements to perfectly fill viewport
       const TIME_COL = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--timeCol')) || 80;
       const HEADER_H = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--headerH')) || 40;
 
@@ -176,12 +197,12 @@
           cluster.forEach((ev, k) => {
             const div = document.createElement('div');
             div.className = 'event';
-            div.style.background = ev.color;
+            div.style.background = ev.color || colorFor(ev.code);
 
             const top = HEADER_H + (ev.start - 8) * pixelsPerHour;
             const height = (ev.end - ev.start) * pixelsPerHour;
-            const left = TIME_COL + d * dayWidth + k * colWidth + 4; // 4px inner padding
-            const width = colWidth - 8; // 4px left + 4px right padding
+            const left = TIME_COL + d * dayWidth + k * colWidth + 4; // inner padding
+            const width = colWidth - 8;
 
             div.style.top = `${top}px`;
             div.style.height = `${height}px`;
@@ -194,7 +215,14 @@
             const del = document.createElement('div');
             del.className = 'del';
             del.textContent = '×';
-            del.onclick = (e) => { e.stopPropagation(); if (confirm('Remove this course?')) { events = events.filter(x => x !== ev); renderEvents(); } };
+            del.onclick = (e) => {
+              e.stopPropagation();
+              if (confirm('Remove this course?')) {
+                events = events.filter(x => x !== ev);
+                saveState();
+                renderEvents();
+              }
+            };
             div.appendChild(del);
 
             overlay.appendChild(div);
@@ -223,7 +251,9 @@
       if(start < 8 || end > 22){ alert('Times must be between 8:00 AM and 10:00 PM.'); return; }
 
       const dayIndex = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(dayStr);
-      events.push({ code, type, loc, day: dayIndex, start, end, color: colorFor(code) });
+      const evt = { code, type, loc, day: dayIndex, start, end, color: colorFor(code) };
+      events.push(evt);
+      saveState();
       renderEvents();
     });
 
@@ -236,8 +266,22 @@
       link.click();
     });
 
+    // Clear all
+    document.getElementById('clear').addEventListener('click', () => {
+      if (!confirm('Clear all courses and colors?')) return;
+      events = [];
+      colorMap = {};
+      colorIdx = 0;
+      saveState();
+      renderEvents();
+    });
+
     // Re-render on resize so scaling stays perfect
     window.addEventListener('resize', renderEvents);
+
+    // ---- Boot: load from localStorage and render ----
+    loadState();
+    renderEvents();
   </script>
 </body>
 </html>
