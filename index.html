@@ -95,8 +95,8 @@
   <select id="day">
     <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
   </select>
-  <input id="start" type="number" placeholder="Start Time (e.g. 13.5)" step="0.25" min="8" max="22">
-  <input id="duration" type="number" placeholder="Duration (hrs)" step="0.05" min="0.25">
+  <input id="start" type="text" placeholder="Start Time (e.g. 1:30 PM)">
+  <input id="end" type="text" placeholder="End Time (e.g. 2:20 PM)">
   <button onclick="addEvent()">Add Course</button>
 </div>
 
@@ -113,7 +113,6 @@
 <script>
   const calendar = document.getElementById("calendar");
 
-  // Convert 24h to 12h format
   function formatTime(hour) {
     const h = Math.floor(hour);
     const m = Math.round((hour % 1) * 60);
@@ -123,7 +122,6 @@
     return `${h12}:${minStr} ${suffix}`;
   }
 
-  // Generate time labels from 8 AM to 10 PM (15 rows)
   for (let i = 0; i <= 14; i++) {
     const time = document.createElement("div");
     time.className = "time-col";
@@ -147,15 +145,28 @@
     return colorMap[code];
   }
 
+  function timeStringToDecimal(str) {
+    const [time, modifier] = str.trim().split(/\\s+/);
+    if (!time || !modifier) return NaN;
+    let [hours, minutes] = time.split(':').map(Number);
+    if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
+    if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
+    return hours + (minutes / 60);
+  }
+
   function addEvent() {
     const code = document.getElementById("code").value.trim();
     const type = document.getElementById("type").value.trim();
     const location = document.getElementById("location").value.trim();
     const day = document.getElementById("day").value;
-    const start = parseFloat(document.getElementById("start").value);
-    const duration = parseFloat(document.getElementById("duration").value);
+    const startStr = document.getElementById("start").value.trim();
+    const endStr = document.getElementById("end").value.trim();
 
-    if (!code || !type || !location || isNaN(start) || isNaN(duration)) {
+    const start = timeStringToDecimal(startStr);
+    const end = timeStringToDecimal(endStr);
+    const duration = end - start;
+
+    if (!code || !type || !location || isNaN(start) || isNaN(end) || duration <= 0) {
       alert("Please fill out all fields correctly.");
       return;
     }
