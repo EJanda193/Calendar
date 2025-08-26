@@ -1,192 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Course Calendar</title>
+  <meta charset="UTF-8">
+  <title>Weekly Calendar</title>
   <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background-color: #121212;
-      color: #fff;
+    body {
+      background-color: #111;
+      color: white;
       font-family: Arial, sans-serif;
-      overflow: hidden;
+      margin: 0;
+      padding: 0;
     }
 
     h1 {
       text-align: center;
-      margin: 20px 0 10px 0;
+      padding: 20px;
     }
 
-    .form-container {
-      text-align: center;
-      margin-bottom: 10px;
+    #controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
     }
 
-    .form-container input, .form-container select {
-      margin: 5px;
-      padding: 6px;
-      border-radius: 5px;
+    input, select, button {
+      padding: 5px;
+      font-size: 14px;
+      border-radius: 4px;
       border: none;
     }
 
-    .calendar-wrapper {
-      position: absolute;
-      top: 120px;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      overflow: auto;
+    #calendar-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow-y: auto;
     }
 
-    .calendar {
+    #calendar {
       display: grid;
       grid-template-columns: 80px repeat(7, 1fr);
-      grid-template-rows: 40px;
       width: 100%;
-      min-height: 100%;
-      border-top: 1px solid #333;
-      border-left: 1px solid #333;
-    }
-
-    .calendar > div {
-      border-right: 1px solid #333;
-      border-bottom: 1px solid #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
 
     .time-col {
-      background-color: #1e1e1e;
+      background-color: #000;
+      padding: 4px;
+      text-align: right;
+      border-bottom: 1px solid #444;
       font-size: 12px;
     }
 
-    .header {
-      background-color: #222;
+    #calendar > div {
+      border-bottom: 1px solid #444;
+      border-right: 1px solid #444;
+      min-height: 60px;
+    }
+
+    #calendar > div:nth-child(8n+1) {
+      background-color: #1a1a1a;
+      font-size: 12px;
       font-weight: bold;
+      text-align: right;
+      padding-right: 4px;
     }
 
     .event {
       position: absolute;
-      border-radius: 5px;
-      color: #000;
       padding: 4px;
+      color: black;
       font-size: 12px;
-      box-sizing: border-box;
-      white-space: pre-line;
-    }
-
-    .calendar-container {
-      position: absolute;
-      top: 160px;
-      width: 100%;
+      font-weight: bold;
+      overflow: hidden;
+      border-radius: 6px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
-
-<h1>Weekly Calendar</h1>
-
-<div class="form-container">
-  <input id="code" type="text" placeholder="Course Code (e.g. CIS*2030)">
-  <input id="type" type="text" placeholder="LEC / LAB">
-  <input id="location" type="text" placeholder="Location (e.g. MACK 117)">
-  <select id="day">
-    <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
-  </select>
-  <input id="start" type="text" placeholder="Start Time (e.g. 1:30 PM)">
-  <input id="end" type="text" placeholder="End Time (e.g. 2:20 PM)">
-  <button onclick="addEvent()">Add Course</button>
-</div>
-
-<div class="calendar-wrapper">
-  <div class="calendar" id="calendar">
-    <div></div>
-    <div class="header">Mon</div><div class="header">Tue</div><div class="header">Wed</div>
-    <div class="header">Thu</div><div class="header">Fri</div><div class="header">Sat</div><div class="header">Sun</div>
+  <h1>Weekly Calendar</h1>
+  <div id="controls">
+    <input id="code" placeholder="Course Code (e.g. CIS*2030)">
+    <input id="type" placeholder="LEC / LAB">
+    <input id="location" placeholder="Location (e.g. MACK 117)">
+    <select id="day">
+      <option>Mon</option><option>Tue</option><option>Wed</option>
+      <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+    </select>
+    <input id="start-time" type="text" placeholder="Start (e.g. 1:30)">
+    <select id="start-meridian"><option>AM</option><option>PM</option></select>
+    <input id="end-time" type="text" placeholder="End (e.g. 2:20)">
+    <select id="end-meridian"><option>AM</option><option>PM</option></select>
+    <button onclick="addEvent()">Add Course</button>
   </div>
-</div>
 
-<div class="calendar-container" id="calendar-container"></div>
+  <div id="calendar-container">
+    <div id="calendar"></div>
+  </div>
 
-<script>
-  const calendar = document.getElementById("calendar");
+  <script>
+    const calendar = document.getElementById("calendar");
 
-  function formatTime(hour) {
-    const h = Math.floor(hour);
-    const m = Math.round((hour % 1) * 60);
-    const suffix = h >= 12 ? "PM" : "AM";
-    const h12 = ((h + 11) % 12 + 1);
-    const minStr = m.toString().padStart(2, '0');
-    return `${h12}:${minStr} ${suffix}`;
-  }
-
-  for (let i = 0; i <= 14; i++) {
-    const time = document.createElement("div");
-    time.className = "time-col";
-    time.innerText = formatTime(8 + i);
-    calendar.appendChild(time);
-    for (let j = 0; j < 7; j++) {
-      const cell = document.createElement("div");
-      calendar.appendChild(cell);
-    }
-  }
-
-  const colorMap = {};
-  const colorList = ["#a2d2ff", "#ffc6ff", "#caffbf", "#fdffb6", "#bdb2ff", "#ffadad", "#9bf6ff"];
-  let colorIndex = 0;
-
-  function getColor(code) {
-    if (!colorMap[code]) {
-      colorMap[code] = colorList[colorIndex % colorList.length];
-      colorIndex++;
-    }
-    return colorMap[code];
-  }
-
-  function timeStringToDecimal(str) {
-    const [time, modifier] = str.trim().split(/\\s+/);
-    if (!time || !modifier) return NaN;
-    let [hours, minutes] = time.split(':').map(Number);
-    if (modifier.toUpperCase() === "PM" && hours !== 12) hours += 12;
-    if (modifier.toUpperCase() === "AM" && hours === 12) hours = 0;
-    return hours + (minutes / 60);
-  }
-
-  function addEvent() {
-    const code = document.getElementById("code").value.trim();
-    const type = document.getElementById("type").value.trim();
-    const location = document.getElementById("location").value.trim();
-    const day = document.getElementById("day").value;
-    const startStr = document.getElementById("start").value.trim();
-    const endStr = document.getElementById("end").value.trim();
-
-    const start = timeStringToDecimal(startStr);
-    const end = timeStringToDecimal(endStr);
-    const duration = end - start;
-
-    if (!code || !type || !location || isNaN(start) || isNaN(end) || duration <= 0) {
-      alert("Please fill out all fields correctly.");
-      return;
+    function formatTime(hour) {
+      const h = Math.floor(hour);
+      const m = Math.round((hour % 1) * 60);
+      const suffix = h >= 12 ? "PM" : "AM";
+      const h12 = ((h + 11) % 12 + 1);
+      const minStr = m.toString().padStart(2, '0');
+      return `${h12}:${minStr} ${suffix}`;
     }
 
-    const dayIndex = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(day);
-    const top = (start - 8) * 60 + 40;
-    const height = duration * 60;
+    for (let i = 0; i <= 14; i++) {
+      const time = document.createElement("div");
+      time.className = "time-col";
+      time.innerText = formatTime(8 + i);
+      calendar.appendChild(time);
+      for (let j = 0; j < 7; j++) {
+        const cell = document.createElement("div");
+        calendar.appendChild(cell);
+      }
+    }
 
-    const div = document.createElement("div");
-    div.className = "event";
-    div.style.left = `calc(${(dayIndex + 1) * 100 / 8}%)`;
-    div.style.top = `${top}px`;
-    div.style.height = `${height}px`;
-    div.style.width = "calc(100% / 8)";
-    div.style.backgroundColor = getColor(code);
-    div.innerText = `${code} ${type}\n${location}`;
+    const colorMap = {};
+    const colorList = ["#a2d2ff", "#ffc6ff", "#caffbf", "#fdffb6", "#bdb2ff", "#ffadad", "#9bf6ff"];
+    let colorIndex = 0;
 
-    document.getElementById("calendar-container").appendChild(div);
-  }
-</script>
+    function getColor(code) {
+      if (!colorMap[code]) {
+        colorMap[code] = colorList[colorIndex % colorList.length];
+        colorIndex++;
+      }
+      return colorMap[code];
+    }
 
+    function timeToDecimal(time, meridian) {
+      const [hStr, mStr] = time.trim().split(':');
+      if (!hStr || !mStr) return NaN;
+      let h = parseInt(hStr);
+      const m = parseInt(mStr);
+
+      if (meridian.toUpperCase() === 'PM' && h !== 12) h += 12;
+      if (meridian.toUpperCase() === 'AM' && h === 12) h = 0;
+
+      return h + (m / 60);
+    }
+
+    function addEvent() {
+      const code = document.getElementById("code").value.trim();
+      const type = document.getElementById("type").value.trim();
+      const location = document.getElementById("location").value.trim();
+      const day = document.getElementById("day").value;
+
+      const startTime = document.getElementById("start-time").value.trim();
+      const startMeridian = document.getElementById("start-meridian").value;
+      const endTime = document.getElementById("end-time").value.trim();
+      const endMeridian = document.getElementById("end-meridian").value;
+
+      const start = timeToDecimal(startTime, startMeridian);
+      const end = timeToDecimal(endTime, endMeridian);
+      const duration = end - start;
+
+      if (!code || !type || !location || isNaN(start) || isNaN(end) || duration <= 0) {
+        alert("Please fill out all fields correctly.");
+        return;
+      }
+
+      const dayIndex = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(day);
+      const top = (start - 8) * 60 + 40;
+      const height = duration * 60;
+
+      const div = document.createElement("div");
+      div.className = "event";
+      div.style.left = `calc(${(dayIndex + 1) * 100 / 8}%)`;
+      div.style.top = `${top}px`;
+      div.style.height = `${height}px`;
+      div.style.width = "calc(100% / 8)";
+      div.style.backgroundColor = getColor(code);
+      div.innerText = `${code} ${type}\n${location}`;
+
+      document.getElementById("calendar-container").appendChild(div);
+    }
+  </script>
 </body>
 </html>
