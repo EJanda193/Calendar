@@ -4,80 +4,69 @@
   <meta charset="UTF-8" />
   <title>Weekly Calendar</title>
   <style>
-    :root {
-      --timeCol: 80px;       /* left time column width */
-      --headerH: 40px;       /* day header height */
-      --halfHourH: 30px;     /* height per 30 minutes */
-      --hourH: 60px;         /* height per hour (derived) */
+    :root{
+      --timeCol:80px;         /* left time labels width */
+      --headerH:40px;         /* day header height */
+      --halfHourH:30px;       /* 30 min row height */
+      --hourH:60px;           /* derived (2 * halfHourH) */
+    }
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;background:#111;color:#fff;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      min-height:100vh;display:flex;flex-direction:column;
     }
 
-    body {
-      margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    h1{margin:16px 0 8px;text-align:center}
+
+    .controls{
+      display:flex;justify-content:center;flex-wrap:wrap;gap:8px;
+      padding:0 12px 10px;
+    }
+    .controls input,.controls select,.controls button{
+      padding:6px 8px;font-size:14px;border:none;border-radius:6px;
+    }
+    .controls button{background:#2e7d32;color:#fff;cursor:pointer}
+
+    /* Wrapper fills all remaining viewport height */
+    .calendar-wrap{
+      position:relative;flex:1;min-height:0; /* makes it grow */
     }
 
-    h1 { text-align: center; margin: 18px 0 10px; }
+    /* Background grid */
+    .grid{
+      position:absolute;inset:0; /* fill wrapper */
+      display:grid;
+      grid-template-columns:var(--timeCol) repeat(7,1fr);
+      grid-template-rows:var(--headerH) repeat(29,var(--halfHourH)); /* 8:00 → 10:00 inclusive */
+      border-top:1px solid #333;border-left:1px solid #333;
+      background:#151515;
+    }
+    .grid > div{
+      border-right:1px solid #333;border-bottom:1px solid #222;
+      display:flex;align-items:center;justify-content:center;font-size:12px;
+    }
+    .day-head{background:#222;font-weight:700}
+    .time-cell{background:#101010;color:#ddd;justify-content:flex-end;padding-right:6px}
 
-    .controls {
-      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-      margin: 0 12px 12px;
-    }
-    .controls input, .controls select, .controls button {
-      padding: 6px 8px; font-size: 14px; border-radius: 6px; border: none;
-    }
-    .controls button { background:#2e7d32; color:#fff; cursor:pointer; }
+    /* Event overlay sits on top of the grid inside the same wrapper */
+    .overlay{position:absolute;inset:0;pointer-events:none}
+    .event{
+      position:absolute;pointer-events:auto;
+      border-radius:8px;padding:6px 8px;color:#000;font-size:12px;line-height:1.25;
+      box-shadow:0 1px 6px rgba(0,0,0,.35);white-space:pre-line;border:1px solid rgba(0,0,0,.15);
 
-    /* Grid background (days + time lines) */
-    .grid {
-      position: relative;
-      height: calc(100vh - 160px);
-      border-top: 1px solid #333;
-      border-left: 1px solid #333;
-      display: grid;
-      grid-template-columns: var(--timeCol) repeat(7, 1fr);
-      /* header + 29 half-hour rows (8:00 → 10:00 inclusive) */
-      grid-template-rows: var(--headerH) repeat(29, var(--halfHourH));
-      background: #151515;
-    }
-    .grid > div {
-      border-right: 1px solid #333;
-      border-bottom: 1px solid #222;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px;
-    }
-    .day-head { background:#222; font-weight: 700; }
-    .time-cell { background:#101010; justify-content: flex-end; padding-right: 6px; color:#ddd; }
+      /* horizontal: width of a single day column */
+      width:calc((100% - var(--timeCol))/7 - 8px);
+      left:calc(var(--timeCol) + var(--day) * ((100% - var(--timeCol))/7) + 4px);
 
-    /* Overlay for events */
-    .overlay {
-      pointer-events: none;
-      position: absolute; inset: 0;
-    }
-    .event {
-      position: absolute;
-      pointer-events: auto;
-      border-radius: 8px;
-      padding: 6px 8px;
-      color:#000;
-      font-size: 12px;
-      line-height: 1.25;
-      box-shadow: 0 1px 6px rgba(0,0,0,.35);
-      /* day positioning: width is (full width minus time column)/7 */
-      width: calc((100% - var(--timeCol)) / 7 - 8px);
-      left: calc(var(--timeCol) + var(--day) * ((100% - var(--timeCol)) / 7) + 4px);
-      /* vertical positioning */
-      top: calc(var(--headerH) + (var(--start) - 8) * var(--hourH));
-      height: calc((var(--end) - var(--start)) * var(--hourH));
-      background: var(--bg);
-      border: 1px solid rgba(0,0,0,.15);
-      overflow: hidden;
-      white-space: pre-line;
-    }
+      /* vertical */
+      top:calc(var(--headerH) + (var(--start) - 8) * var(--hourH));
+      height:calc((var(--end) - var(--start)) * var(--hourH));
 
-    /* faint half-hour lines across days */
-    .row { grid-column: 1 / -1; border-bottom: 1px solid #1e1e1e; }
+      background:var(--bg);
+    }
   </style>
 </head>
 <body>
@@ -98,72 +87,55 @@
     <button id="add">Add Course</button>
   </div>
 
-  <!-- Background grid -->
-  <div class="grid" id="grid">
-    <!-- top-left blank -->
-    <div></div>
-    <!-- day headers -->
-    <div class="day-head">Mon</div><div class="day-head">Tue</div><div class="day-head">Wed</div>
-    <div class="day-head">Thu</div><div class="day-head">Fri</div><div class="day-head">Sat</div><div class="day-head">Sun</div>
-
-    <!-- time labels + empty cells -->
+  <div class="calendar-wrap" id="wrap">
+    <!-- grid background -->
+    <div class="grid" id="grid">
+      <div></div>
+      <div class="day-head">Mon</div><div class="day-head">Tue</div><div class="day-head">Wed</div>
+      <div class="day-head">Thu</div><div class="day-head">Fri</div><div class="day-head">Sat</div><div class="day-head">Sun</div>
+    </div>
+    <!-- events overlay (aligned to wrapper) -->
+    <div class="overlay" id="overlay"></div>
   </div>
 
-  <!-- Event overlay -->
-  <div class="overlay" id="overlay"></div>
-
   <script>
-    // ---------- build the grid (time labels every 30 min, 8:00 AM → 10:00 PM inclusive) ----------
     const grid = document.getElementById('grid');
-
-    function label(h, m) {
+    // Build time labels every 30 min from 8:00 → 22:00 (10:00 PM) inclusive
+    function fmt(h, m){
       const ampm = h >= 12 ? 'PM' : 'AM';
       const h12 = ((h + 11) % 12) + 1;
-      const mm = String(m).padStart(2,'0');
-      return `${h12}:${mm} ${ampm}`;
+      return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
     }
-
-    // 29 half-hour rows: from 8:00 to 22:00 inclusive (8..22 => 14 hours => 29 rows)
     for (let i = 0; i < 29; i++) {
-      const hour = 8 + Math.floor(i / 2);
-      const mins = i % 2 ? 30 : 0;
-
-      // time label
+      const hour = 8 + Math.floor(i/2);
+      const mins = i%2 ? 30 : 0;
       const t = document.createElement('div');
-      t.className = 'time-cell';
-      t.textContent = label(hour, mins);
+      t.className='time-cell';
+      t.textContent = fmt(hour, mins);
       grid.appendChild(t);
-
-      // day cells (visual only)
-      for (let d = 0; d < 7; d++) {
-        const cell = document.createElement('div');
-        grid.appendChild(cell);
-      }
+      for (let d=0; d<7; d++) grid.appendChild(document.createElement('div'));
     }
 
-    // ---------- color map per course code ----------
+    // Stable color per course code
     const colorMap = {};
     const palette = ['#a2d2ff','#caffbf','#ffc6ff','#ffd6a5','#bdb2ff','#9bf6ff','#ffadad','#e0ffcd','#ffe5ec'];
     let colorIdx = 0;
-    function colorFor(code) {
+    function colorFor(code){
       const key = code.trim().toUpperCase();
-      if (!colorMap[key]) colorMap[key] = palette[colorIdx++ % palette.length];
+      if(!colorMap[key]) colorMap[key] = palette[colorIdx++ % palette.length];
       return colorMap[key];
     }
 
-    // ---------- time parsing ----------
-    function toDecimal(timeStr, meridian) {
+    function toDecimal(timeStr, meridian){
       const [hStr, mStr='0'] = timeStr.trim().split(':');
-      let h = parseInt(hStr, 10);
-      const m = parseInt(mStr, 10);
+      let h = parseInt(hStr,10), m = parseInt(mStr,10);
       if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
       const mer = meridian.toUpperCase();
-      if (mer === 'PM' && h !== 12) h += 12;
-      if (mer === 'AM' && h === 12) h = 0;
+      if(mer==='PM' && h!==12) h+=12;
+      if(mer==='AM' && h===12) h=0;
       return h + m/60;
     }
 
-    // ---------- add events ----------
     const overlay = document.getElementById('overlay');
     document.getElementById('add').addEventListener('click', () => {
       const code = document.getElementById('code').value.trim();
@@ -175,22 +147,23 @@
       const eT   = document.getElementById('end-time').value;
       const eM   = document.getElementById('end-meridian').value;
 
-      if (!code || !type || !sT || !eT) { alert('Please fill all fields.'); return; }
+      if(!code || !type || !sT || !eT){ alert('Please fill all fields.'); return; }
 
       const start = toDecimal(sT, sM);
       const end   = toDecimal(eT, eM);
-      if (isNaN(start) || isNaN(end) || end <= start) { alert('Check your times.'); return; }
-      if (start < 8 || end > 22) { alert('Times must be between 8:00 AM and 10:00 PM.'); return; }
+      if(isNaN(start) || isNaN(end) || end <= start){ alert('Check your times.'); return; }
+      if(start < 8 || end > 22){ alert('Times must be between 8:00 AM and 10:00 PM.'); return; }
 
       const dayIndex = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(day);
-      const block = document.createElement('div');
-      block.className = 'event';
-      block.style.setProperty('--day', dayIndex);   // 0..6
-      block.style.setProperty('--start', start);    // decimal hours
-      block.style.setProperty('--end',   end);
-      block.style.setProperty('--bg', colorFor(code));
-      block.textContent = `${code} ${type}\n${loc}`;
-      overlay.appendChild(block);
+
+      const ev = document.createElement('div');
+      ev.className = 'event';
+      ev.style.setProperty('--day', dayIndex);
+      ev.style.setProperty('--start', start);
+      ev.style.setProperty('--end', end);
+      ev.style.setProperty('--bg', colorFor(code));
+      ev.textContent = `${code} ${type}\n${loc}`;
+      overlay.appendChild(ev);
     });
   </script>
 </body>
