@@ -27,7 +27,9 @@
     .controls input,.controls select,.controls button{
       padding:6px 8px;font-size:14px;border:none;border-radius:6px;
     }
-    .controls button{background:#2e7d32;color:#fff;cursor:pointer}
+    .controls button{cursor:pointer}
+    #add{background:#2e7d32;color:#fff}
+    #save{background:#1976d2;color:#fff}
 
     /* Wrapper fills all remaining viewport height */
     .calendar-wrap{
@@ -85,6 +87,7 @@
     <input id="end-time" placeholder="2:20">
     <select id="end-meridian"><option>AM</option><option selected>PM</option></select>
     <button id="add">Add Course</button>
+    <button id="save">Save PNG</button>
   </div>
 
   <div class="calendar-wrap" id="wrap">
@@ -98,8 +101,12 @@
     <div class="overlay" id="overlay"></div>
   </div>
 
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
   <script>
     const grid = document.getElementById('grid');
+
     // Build time labels every 30 min from 8:00 → 22:00 (10:00 PM) inclusive
     function fmt(h, m){
       const ampm = h >= 12 ? 'PM' : 'AM';
@@ -164,6 +171,17 @@
       ev.style.setProperty('--bg', colorFor(code));
       ev.textContent = `${code} ${type}\n${loc}`;
       overlay.appendChild(ev);
+    });
+
+    // ---- Save calendar area as PNG ----
+    document.getElementById('save').addEventListener('click', async () => {
+      const wrap = document.getElementById('wrap'); // capture grid + overlay only
+      // Use 2x for sharper output; transparent: false to keep dark bg
+      const canvas = await html2canvas(wrap, {backgroundColor: null, scale: 2, useCORS: true});
+      const link = document.createElement('a');
+      link.download = 'calendar.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
     });
   </script>
 </body>
