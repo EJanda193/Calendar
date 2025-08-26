@@ -86,7 +86,7 @@
 </head>
 <body>
 
-<h1>Weekly Calendar (Uni)</h1>
+<h1>Weekly Calendar</h1>
 
 <div class="form-container">
   <input id="code" type="text" placeholder="Course Code (e.g. CIS*2030)">
@@ -95,8 +95,8 @@
   <select id="day">
     <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
   </select>
-  <input id="start" type="number" placeholder="Start Hour (24h)" min="8" max="22">
-  <input id="duration" type="number" placeholder="Duration (hrs)" step="0.5" min="0.5">
+  <input id="start" type="number" placeholder="Start Time (e.g. 13.5)" step="0.25" min="8" max="22">
+  <input id="duration" type="number" placeholder="Duration (hrs)" step="0.05" min="0.25">
   <button onclick="addEvent()">Add Course</button>
 </div>
 
@@ -113,14 +113,17 @@
 <script>
   const calendar = document.getElementById("calendar");
 
-  // Convert to 12-hour format
+  // Convert 24h to 12h format
   function formatTime(hour) {
-    const suffix = hour >= 12 ? "PM" : "AM";
-    const hour12 = ((hour + 11) % 12 + 1); // converts 0->12, 13->1, etc.
-    return `${hour12}:00 ${suffix}`;
+    const h = Math.floor(hour);
+    const m = Math.round((hour % 1) * 60);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const h12 = ((h + 11) % 12 + 1);
+    const minStr = m.toString().padStart(2, '0');
+    return `${h12}:${minStr} ${suffix}`;
   }
 
-  // Generate time rows from 8 AM to 10 PM
+  // Generate time labels from 8 AM to 10 PM (15 rows)
   for (let i = 0; i <= 14; i++) {
     const time = document.createElement("div");
     time.className = "time-col";
