@@ -1,166 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Weekly Calendar</title>
   <style>
     body {
-      background-color: #111;
-      color: white;
       font-family: Arial, sans-serif;
-      margin: 0;
+      background-color: #121212;
+      color: white;
+      text-align: center;
+    }
+    h1 {
+      margin: 20px;
+    }
+    #inputContainer input,
+    #inputContainer select,
+    #inputContainer button {
+      margin: 5px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+    #inputContainer button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #333;
       padding: 0;
     }
-
-    h1 {
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    .controls {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .controls input,
-    .controls select,
-    .controls button {
-      padding: 4px;
-      font-size: 14px;
-    }
-
-    .calendar {
-      width: 100%;
-      height: calc(100vh - 150px);
-      display: grid;
-      grid-template-columns: 50px repeat(7, 1fr);
-      grid-template-rows: repeat(29, 1fr);
-      border-top: 1px solid #444;
-    }
-
-    .calendar div {
-      border: 1px solid #222;
-      border-top: none;
-      border-left: none;
-    }
-
-    .time-label {
-      text-align: right;
-      padding-right: 5px;
-      font-size: 12px;
-      color: #ddd;
-    }
-
-    .header {
+    th {
       background-color: #222;
-      font-weight: bold;
-      text-align: center;
-      border-top: 1px solid #444;
+      color: white;
+      height: 30px;
     }
-
+    .time-label {
+      width: 60px;
+      background-color: #111;
+      font-size: 12px;
+      color: white;
+    }
+    .calendar-cell {
+      height: 30px;
+      position: relative;
+    }
     .course-block {
       position: absolute;
-      background-color: #66b2ff;
-      color: #000;
-      padding: 3px;
-      border-radius: 4px;
+      left: 5%;
+      width: 90%;
+      color: black;
+      border-radius: 5px;
+      padding: 2px;
       font-size: 12px;
-      overflow: hidden;
-    }
-
-    .calendar-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
+      z-index: 1;
+      box-sizing: border-box;
     }
   </style>
 </head>
 <body>
   <h1>Weekly Calendar</h1>
-  <div class="controls">
-    <input id="course" placeholder="CIS*2030">
-    <input id="type" placeholder="LEC">
-    <input id="location" placeholder="CRSC 116">
+  <div id="inputContainer">
+    <input type="text" id="course" placeholder="CIS*2030" />
+    <input type="text" id="type" placeholder="LEC" />
+    <input type="text" id="location" placeholder="CRSC 116" />
     <select id="day">
-      <option>Mon</option><option>Tue</option><option>Wed</option>
-      <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+      <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
     </select>
-    <input id="startTime" placeholder="1:30">
-    <select id="startAmPm"><option>AM</option><option selected>PM</option></select>
-    <input id="endTime" placeholder="2:20">
-    <select id="endAmPm"><option>AM</option><option selected>PM</option></select>
+    <input type="text" id="startTime" placeholder="1:30" />
+    <select id="startPeriod"><option>AM</option><option>PM</option></select>
+    <input type="text" id="endTime" placeholder="2:20" />
+    <select id="endPeriod"><option>AM</option><option>PM</option></select>
     <button onclick="addCourse()">Add Course</button>
   </div>
 
-  <div class="calendar-container">
-    <div class="calendar" id="calendar"></div>
-  </div>
+  <table id="calendar">
+    <thead>
+      <tr>
+        <th class="time-label"></th>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Time rows -->
+      <script>
+        for (let hour = 8; hour <= 21; hour++) {
+          ["00", "30"].forEach(min => {
+            const label = ((hour % 12) || 12) + ":" + min + (hour < 12 ? " AM" : " PM");
+            document.write(`<tr><td class="time-label">${label}</td>`);
+            for (let d = 0; d < 7; d++) {
+              document.write(`<td class="calendar-cell" data-day="${d}" data-time="${hour}:${min}"></td>`);
+            }
+            document.write(`</tr>`);
+          });
+        }
+      </script>
+    </tbody>
+  </table>
 
   <script>
-    const calendar = document.getElementById('calendar');
-    const days = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const colorMap = {}; // Map course code -> consistent color
+    const colorPalette = [
+      "#90caf9", "#a5d6a7", "#f48fb1", "#ffcc80", "#ce93d8", "#80deea", "#fff59d", "#ef9a9a", "#bcaaa4"
+    ];
+    let colorIndex = 0;
 
-    // Build the calendar grid
-    for (let row = 0; row <= 28; row++) {
-      for (let col = 0; col < 8; col++) {
-        const cell = document.createElement('div');
-
-        if (row === 0 && col > 0) {
-          cell.classList.add("header");
-          cell.innerText = days[col];
-        } else if (col === 0 && row > 0) {
-          const hour = 8 + Math.floor((row - 1) / 2);
-          const half = (row - 1) % 2 === 0 ? "00" : "30";
-          const ampm = hour >= 12 ? "PM" : "AM";
-          const formattedHour = ((hour - 1) % 12 + 1) + ":" + half + " " + ampm;
-          cell.classList.add("time-label");
-          cell.innerText = formattedHour;
-        }
-
-        calendar.appendChild(cell);
-      }
+    function timeToDecimal(timeStr, period) {
+      let [hours, minutes] = timeStr.split(':').map(Number);
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      return hours + minutes / 60;
     }
 
-    function timeToFloat(t, ampm) {
-      let [h, m] = t.split(':').map(Number);
-      if (ampm === 'PM' && h !== 12) h += 12;
-      if (ampm === 'AM' && h === 12) h = 0;
-      return h + (m / 60);
+    function getColorForCourse(courseCode) {
+      if (!colorMap[courseCode]) {
+        colorMap[courseCode] = colorPalette[colorIndex % colorPalette.length];
+        colorIndex++;
+      }
+      return colorMap[courseCode];
     }
 
     function addCourse() {
-      const course = document.getElementById('course').value.trim();
-      const type = document.getElementById('type').value.trim();
-      const location = document.getElementById('location').value.trim();
-      const day = document.getElementById('day').value;
-      const startTime = document.getElementById('startTime').value.trim();
-      const endTime = document.getElementById('endTime').value.trim();
-      const startAmPm = document.getElementById('startAmPm').value;
-      const endAmPm = document.getElementById('endAmPm').value;
+      const course = document.getElementById("course").value.trim();
+      const type = document.getElementById("type").value.trim();
+      const location = document.getElementById("location").value.trim() || "Location";
+      const dayStr = document.getElementById("day").value;
+      const start = document.getElementById("startTime").value.trim();
+      const end = document.getElementById("endTime").value.trim();
+      const startPeriod = document.getElementById("startPeriod").value;
+      const endPeriod = document.getElementById("endPeriod").value;
 
-      if (!course || !type || !location || !startTime || !endTime) {
-        alert("Please fill in all fields.");
+      if (!course || !type || !start || !end) {
+        alert("Please fill out all fields correctly.");
         return;
       }
 
-      const start = timeToFloat(startTime, startAmPm);
-      const end = timeToFloat(endTime, endAmPm);
+      const startDec = timeToDecimal(start, startPeriod);
+      const endDec = timeToDecimal(end, endPeriod);
+      const duration = endDec - startDec;
 
-      const top = (start - 8) * 40;
-      const height = (end - start) * 40;
-      const left = days.indexOf(day) * (100 / 8) + 12.5;
+      if (duration <= 0) {
+        alert("End time must be after start time.");
+        return;
+      }
 
-      const block = document.createElement('div');
-      block.className = 'course-block';
-      block.style.top = `${top}px`;
-      block.style.left = `calc(${left}% + 1px)`;
-      block.style.width = `calc(12.5% - 3px)`;
+      const dayIndex = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(dayStr);
+      const topOffset = (startDec - 8) * 60;
+      const height = duration * 60;
+
+      const block = document.createElement("div");
+      block.className = "course-block";
+      block.style.top = `${topOffset}px`;
       block.style.height = `${height}px`;
-      block.innerText = `${course} ${type}\n${location}`;
-      document.querySelector('.calendar-container').appendChild(block);
+      block.style.backgroundColor = getColorForCourse(course);
+      block.innerHTML = `${course} ${type}<br>${location}`;
+
+      const columnCells = document.querySelectorAll(`td[data-day="${dayIndex}"]`);
+      const container = columnCells[0].parentNode.parentNode.parentNode; // <table>
+      container.appendChild(block);
     }
   </script>
 </body>
